@@ -201,7 +201,7 @@ const LiquidGlassButton = ({
       specularRef.current.setAttribute("href", specUrl);
     }
     if (scaleRef.current) {
-      scaleRef.current.setAttribute("scale", String(Math.round(maxDisplacement)));
+      scaleRef.current.setAttribute("scale", String(Math.round(maxDisplacement * 2.5)));
     }
   }, [bezelWidth, glassThickness, specularOpacity]);
 
@@ -249,24 +249,38 @@ const LiquidGlassButton = ({
           </filter>
         </defs>
       </svg>
-      <button
-        onClick={onClick}
-        className={`relative cursor-pointer transition-all duration-300 ease-in-out
-                    hover:scale-105 active:scale-95 ${className}`}
-        style={{
-          backdropFilter: `url(#${filterId}) blur(12px)`,
-          WebkitBackdropFilter: `url(#${filterId}) blur(12px)`,
-          background: "rgba(255, 255, 255, 0.15)",
-          border: "1px solid rgba(255, 255, 255, 0.25)",
-          borderRadius: "40px",
-          padding: "1rem 2.5rem",
-          color: "white",
-          fontWeight: 600,
-          fontSize: "1.125rem",
-        }}
-      >
-        {children}
-      </button>
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <button
+          onClick={onClick}
+          className={`relative overflow-visible cursor-pointer transition-all duration-300 ease-in-out
+                      hover:scale-105 active:scale-95 ${className}`}
+          style={{
+            background: "rgba(255, 255, 255, 0.15)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            borderRadius: "40px",
+            padding: "1rem 2.5rem",
+            color: "white",
+            fontWeight: 600,
+            fontSize: "1.125rem",
+            position: "relative",
+            zIndex: 2,
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: "-20px",
+              borderRadius: "40px",
+              filter: `url(#${filterId})`,
+              pointerEvents: "none",
+              zIndex: -1,
+            }}
+          />
+          <span style={{ position: "relative", zIndex: 1 }}>{children}</span>
+        </button>
+      </div>
     </>
   );
 };
