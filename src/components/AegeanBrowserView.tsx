@@ -18,9 +18,11 @@ const results = [
 
 interface AegeanBrowserViewProps {
   isActive: boolean;
+  agentLabel?: string;
+  onComplete?: () => void;
 }
 
-const AegeanBrowserView = ({ isActive }: AegeanBrowserViewProps) => {
+const AegeanBrowserView = ({ isActive, agentLabel, onComplete }: AegeanBrowserViewProps) => {
   const [elapsed, setElapsed] = useState(0);
   const [completed, setCompleted] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
@@ -39,6 +41,7 @@ const AegeanBrowserView = ({ isActive }: AegeanBrowserViewProps) => {
       if (ms >= 12000) {
         setCompleted(true);
         clearInterval(timerRef.current);
+        onComplete?.();
       }
     }, 100);
 
@@ -61,7 +64,7 @@ const AegeanBrowserView = ({ isActive }: AegeanBrowserViewProps) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-bold text-foreground">Flight Booking Agent</h3>
+          <h3 className="text-xl font-bold text-foreground">{agentLabel || "Flight Booking Agent"}</h3>
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2 h-2 rounded-full bg-[#10b981]" />
             <span className="text-sm" style={{ color: "#10b981" }}>Active</span>
