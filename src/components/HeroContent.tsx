@@ -1,3 +1,5 @@
+import LiquidGlassButton from "./LiquidGlassButton";
+
 interface HeroContentProps {
   onCtaClick: () => void;
 }
@@ -11,15 +13,12 @@ const HeroContent = ({ onCtaClick }: HeroContentProps) => {
       <p className="text-lg md:text-xl text-white/80 text-center max-w-2xl mb-12 font-light">
         Tasks complete in seconds, not minutes. Watch agents work the way they were meant to.
       </p>
-      <button
+      <LiquidGlassButton
         onClick={onCtaClick}
-        className="glass px-10 py-4 rounded-full text-white font-semibold text-lg
-                   transition-all duration-300 ease-in-out
-                   hover:scale-105 hover:bg-white/25 hover:shadow-[0_0_40px_rgba(95,113,227,0.4)]
-                   active:scale-95 cursor-pointer"
+        className="hover:shadow-[0_0_40px_rgba(95,113,227,0.4)]"
       >
         See the Difference
-      </button>
+      </LiquidGlassButton>
     </div>
   );
 };
