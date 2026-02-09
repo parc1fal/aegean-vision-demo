@@ -7,7 +7,7 @@ import NewTaskModal from "./NewTaskModal";
 const commandToLabel: Record<string, string> = {
   "Book a flight to Rome under $200": "Flight Booking Agent",
   "Find and compare hotel prices in Tokyo": "Hotel Search Agent",
-  "Monitor 10 websites for price changes": "Price Monitor Agent",
+  "Find office space in Manhattan under $50/sqft, 2000+ sqft": "Office Space Search Agent",
 };
 
 interface Agent {
@@ -205,6 +205,7 @@ const BrowserDemo = ({ command, onReset }: BrowserDemoProps) => {
                   <CurrentToolsView
                     key={`current-${activeAgent.id}`}
                     isActive={!activeAgent.isAegean && activeAgent.id === activeAgentId}
+                    command={activeAgent.command}
                   />
                 </div>
                 <div
@@ -221,6 +222,7 @@ const BrowserDemo = ({ command, onReset }: BrowserDemoProps) => {
                     isActive={activeAgent.isAegean && activeAgent.id === activeAgentId}
                     agentLabel={activeAgent.label}
                     onComplete={() => handleComplete(activeAgent.id)}
+                    command={activeAgent.command}
                   />
                 </div>
               </div>

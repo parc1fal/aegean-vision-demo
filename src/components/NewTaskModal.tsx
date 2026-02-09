@@ -3,7 +3,7 @@ import { useState } from "react";
 const commands = [
   "Book a flight to Rome under $200",
   "Find and compare hotel prices in Tokyo",
-  "Monitor 10 websites for price changes",
+  "Find office space in Manhattan under $50/sqft, 2000+ sqft",
 ];
 
 interface NewTaskModalProps {
