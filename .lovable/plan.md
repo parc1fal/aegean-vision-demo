@@ -1,77 +1,122 @@
 
 
-# Multi-Agent Task Queuing for Browser Demo
+# Add Hotel and Office Space Agent Workflows
 
-This plan adds the ability to run multiple concurrent agents in the browser demo, with sidebar management, a task creation modal, and independent progress tracking per agent.
+This plan adds two new command-specific animation workflows to the existing demo, making each of the three commands produce a unique, realistic agent experience.
 
-## What Changes
+## Overview
 
-### New Components
-- **NewTaskModal** -- A centered overlay modal reusing the command bubble design from CommandSelection. Appears when clicking "+ New Task", fades in/out smoothly, closes on backdrop click or command selection.
+Currently, all commands use the same flight-booking animation. We need to make `AegeanBrowserView` and `CurrentToolsView` command-aware, so each command drives its own set of steps, sites, results, and terminal output.
 
-### Modified Components
+## Changes
 
-#### BrowserDemo.tsx (major refactor)
-- **State**: Replace single `command`/`isAegean` with an `agents` array and `activeAgentId`. Each agent object holds: `id`, `command`, `label`, `status` (active/complete), `isAegean` toggle state, and `startTime`.
-- **Top Bar**: Add "+ New Task" button (Plus icon from lucide-react) next to Reset, styled with `rgba(95,113,227,0.15)` background and `#5f71e3` text.
-- **Sidebar**: Render all agents as stacked cards. Each card shows agent number, task name, and a status dot (green=active, blue checkmark=complete). The selected agent gets a `2px solid #5f71e3` border and subtle box-shadow glow. Cards are clickable to switch the main view. Hover state adds slight lift.
-- **Main View**: Cross-fade between agents using opacity transitions (500ms). Each agent's AegeanBrowserView/CurrentToolsView runs independently with its own `isActive` prop driven by whether it's the selected agent.
-- **Reset**: Clears the entire agents array and calls `onReset()` to return to the CommandSelection screen.
-- **Modal state**: A boolean `showNewTaskModal` controls the modal visibility.
+### 1. Update CommandSelection commands array
 
-#### AegeanBrowserView.tsx (minor update)
-- Accept an optional `agentLabel` prop to display the correct task name in the header instead of hardcoded "Flight Booking Agent".
-- Accept an optional `onComplete` callback so BrowserDemo can update the agent's status to "complete" when the 12-second timer finishes.
+Replace the third command "Monitor 10 websites for price changes" with "Find office space in Manhattan under $50/sqft, 2000+ sqft". Update `commandToLabel` in `BrowserDemo.tsx` accordingly.
 
-#### CurrentToolsView.tsx (no changes needed)
-- Already accepts `isActive` and resets on deactivation, so it works as-is for multiple instances.
+**Files:** `CommandSelection.tsx`, `BrowserDemo.tsx`, `NewTaskModal.tsx`
 
-#### Index.tsx (minor update)
-- `BrowserDemo` will receive the first command as before, but internally manages the multi-agent state. The `command` prop seeds the initial agent. No changes to the hero/commands/demo section flow.
+### 2. Refactor AegeanBrowserView to be data-driven
 
-### Agent Data Structure
-```text
-interface Agent {
-  id: string
-  command: string
-  label: string          // e.g. "Flight Booking Agent"
-  status: "active" | "complete"
-  isAegean: boolean      // per-agent toggle state
-  startTime: number      // Date.now() when created
-}
-```
+Instead of hardcoded `steps`, `sites`, and `results` arrays, define a configuration object per command type. The component will receive a `command` prop and select the matching config.
 
-### Command-to-Label Mapping
-- "Book a flight to Rome under $200" -> "Flight Booking Agent"
-- "Find and compare hotel prices in Tokyo" -> "Hotel Search Agent"  
-- "Monitor 10 websites for price changes" -> "Price Monitor Agent"
+**Configuration per command:**
+
+| | Flight | Hotel | Office |
+|---|---|---|---|
+| Duration | 12s | 14s | 15s |
+| Steps | 4 steps (existing) | 6 steps (init params, then 4 analysis steps) | 6 steps (init params, then 4 analysis steps) |
+| Sites appear at | 3s | 2s | 2s |
+| Sites | 8 airlines | 5 hotel sites | 5 CRE sites |
+| Results appear at | 6s | 9s | 10s |
+| Results header | "Results" | "18 hotels matched, showing top 3" | "12 properties matched, showing top 3" |
+| Completion text | "Completed in 12 seconds" | "Completed in 14 seconds" | "Completed in 15 seconds" |
+
+**Hotel steps (with timing):**
+- 0s: "Initializing search parameters..." (with sub-params: Location, Dates, Rating, Amenities)
+- 2s: "Analyzing 1,243 properties..."
+- 4s: "Checking availability..."
+- 6s: "Comparing prices..."
+- 8s: "Reading reviews..."
+
+**Office steps:**
+- 0s: "Initializing search parameters..." (with sub-params: Location, Price, Size, Type)
+- 2s: "Analyzing 342 properties..."
+- 4s: "Filtering by budget..."
+- 6s: "Checking availability..."
+- 8s: "Calculating match scores..."
+
+**Hotel results** (with match badges):
+- Park Hyatt Tokyo -- $285/night, 98% Match, Shinjuku, 4.8 stars, Pool/Spa, [View Details]
+- The Peninsula Tokyo -- $310/night, 95% Match, Marunouchi, 4.9 stars, Luxury, [View Details]
+- Andaz Tokyo -- $265/night, 92% Match, Toranomon, 4.7 stars, Rooftop Bar, [View Details]
+
+**Office results** (with match badges):
+- 250 Park Ave, Floor 14 -- $48/sqft, 97% Match, 2,400 sqft, Midtown, Corner Unit/Class A, [Schedule Tour]
+- 123 William St, Suite 8A -- $45/sqft, 94% Match, 2,200 sqft, Financial District, Move-in Ready/City Views, [Schedule Tour]
+- Hudson Yards Tower C -- $50/sqft, 91% Match, 3,100 sqft, West Side, Modern Fit-out/Amenities, [Schedule Tour]
+
+**Flight results** stay exactly as-is (no match badges, existing card layout).
+
+**New result card structure** for hotel/office commands includes:
+- Match percentage badge (top-right): `rgba(95,113,227,0.1)` bg, `#5f71e3` text, bold, rounded-full
+- Two detail lines (line 2 optional)
+- Parameters sub-panel shown during the init step for hotel/office
+
+### 3. Refactor CurrentToolsView to be data-driven
+
+Add a `command` prop. Define terminal line sets per command:
+
+**Hotel terminal output:**
+- "$ Starting hotel search..."
+- Navigation to booking.com, hotels.com, agoda
+- Errors: "Connection refused: booking.com", "Timeout on Agoda API"
+- Retries failing, ends with "Process failed after 5 minutes"
+- Timer runs to 300s (5 min)
+
+**Office terminal output:**
+- "$ Starting property search..."
+- Navigation to loopnet.com, costar.com
+- Errors: "Query format invalid", "No API response from LoopNet", authentication failures
+- Ends with "No results found - process failed after 6 minutes"
+- Timer runs to 360s (6 min)
+
+**Flight terminal output:** stays exactly as current.
+
+### 4. Pass command prop through BrowserDemo
+
+Update `BrowserDemo.tsx` to pass `activeAgent.command` to both `AegeanBrowserView` and `CurrentToolsView`.
 
 ## Technical Details
 
-### BrowserDemo State Management
+### Data structure approach
+
+Define config objects in each component file (not separate files) to keep things simple:
+
 ```text
-agents: Agent[]              -- all queued agents
-activeAgentId: string | null -- which agent's view is shown
-showNewTaskModal: boolean    -- modal visibility
+// In AegeanBrowserView.tsx
+const agentConfigs: Record<string, AgentConfig> = {
+  "Book a flight to Rome under $200": { steps, sites, results, duration, ... },
+  "Find and compare hotel prices in Tokyo": { ... },
+  "Find office space in Manhattan under $50/sqft, 2000+ sqft": { ... },
+};
 ```
 
-Adding a new agent: push to array, set as active, close modal.
-Each AegeanBrowserView instance runs its own timer independently based on `isActive={agent.id === activeAgentId && agent.isAegean}`.
+### Props changes
 
-### Rendering Multiple Agent Views
-Only the active agent's view is rendered (not all agents simultaneously) to avoid performance issues with multiple timers. When switching agents, a brief opacity transition handles the cross-fade. The elapsed time for non-active Aegean views will resume from where they left off since each view manages its own internal timer based on `isActive`.
-
-### Modal Implementation
-Built inline in BrowserDemo (no external library needed). Uses a fixed overlay div with:
-- `background: rgba(0, 0, 0, 0.6)` and `backdropFilter: blur(4px)`
-- Centered flex container with the 3 command buttons
-- Click handler on backdrop to close
-- 300ms opacity transition for open/close
+| Component | New/Changed Props |
+|---|---|
+| `AegeanBrowserView` | Add `command: string` prop |
+| `CurrentToolsView` | Add `command: string` prop |
+| `BrowserDemo` | Passes `activeAgent.command` to both views |
 
 ### File Changes Summary
-| File | Action |
-|------|--------|
-| `src/components/BrowserDemo.tsx` | Major refactor -- multi-agent state, sidebar, modal, top bar button |
-| `src/components/AegeanBrowserView.tsx` | Add `agentLabel` and `onComplete` props |
-| `src/components/NewTaskModal.tsx` | New file -- modal overlay with command bubbles |
+
+| File | Change |
+|---|---|
+| `src/components/AegeanBrowserView.tsx` | Major -- add config-per-command, params panel, match badges, results header, variable duration |
+| `src/components/CurrentToolsView.tsx` | Major -- add terminal-lines-per-command, variable fail time |
+| `src/components/CommandSelection.tsx` | Minor -- update 3rd command text |
+| `src/components/BrowserDemo.tsx` | Minor -- update commandToLabel, pass command prop to views |
+| `src/components/NewTaskModal.tsx` | Minor -- update 3rd command text if it has its own commands list |
 
